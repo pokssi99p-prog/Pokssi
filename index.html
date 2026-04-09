@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POKSSI — Кузница Знаний</title>
+    <!-- Стили Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Шрифты -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- Иконки -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Библиотека для Графа Знаний -->
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: '#0f1115',
+                        card: '#161b22',
+                        accent: '#00f2ff', // Неоновый голубой
+                        success: '#00ff9d', // Неоновый зеленый
+                        danger: '#ff0055',
+                        purple: '#bd00ff'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #0f1115; color: #e2e8f0; }
+        .glass { background: rgba(22, 27, 34, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.05); }
+        .neon-text { text-shadow: 0 0 10px rgba(0, 242, 255, 0.5); }
+        .btn-neon { 
+            background: transparent; border: 1px solid #00f2ff; color: #00f2ff; 
+            transition: all 0.3s ease; box-shadow: 0 0 5px rgba(0, 242, 255, 0.2);
+        }
+        .btn-neon:hover { background: #00f2ff; color: #000; box-shadow: 0 0 20px rgba(0, 242, 255, 0.6); }
+        .tag { font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; border: 1px solid; }
+        
+        /* Скрытие скроллбара для эстетики */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f1115; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        
+        #mynetwork { width: 100%; height: 600px; border: 1px solid #333; border-radius: 12px; background: #050505; }
+        
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- Навигация -->
+    <nav class="fixed w-full z-50 glass border-b border-gray-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-2 cursor-pointer" onclick="showPage('home')">
+                    <i class="fa-solid fa-bolt text-accent text-2xl"></i>
+                    <span class="font-bold text-xl tracking-wider">POKSSI</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <button onclick="showPage('feed')" class="hover:text-accent px-3 py-2 rounded-md text-sm font-medium transition">Рефинери (Лента)</button>
+                        <button onclick="showPage('graph')" class="hover:text-accent px-3 py-2 rounded-md text-sm font-medium transition">Граф Знаний</button>
+                        <button onclick="showPage('market')" class="hover:text-accent px-3 py-2 rounded-md text-sm font-medium transition">Маркетплейс</button>
+                        <button onclick="showPage('fails')" class="hover:text-danger px-3 py-2 rounded-md text-sm font-medium transition">Лог Ошибок</button>
+                    </div>
+                </div>
+                <div id="auth-buttons">
+                    <!-- Заполняется JS -->
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Основной контент -->
+    <main class="flex-grow pt-20 pb-10 px-4 max-w-7xl mx-auto w-full">
+        
+        <!-- СТРАНИЦА: ГЛАВНАЯ (ЛЕНДИНГ) -->
+        <section id="home" class="fade-in">
+            <div class="text-center py-20">
+                <h1 class="text-5xl md:text-7xl font-extrabold mb-6 tracking-tight">
+                    Перестань потреблять.<br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-accent to-purple neon-text">Начни внедрять.</span>
+                </h1>
+                <p class="text-xl text-gray-400 max-w-2xl mx-auto mb-10">
+                    Первая база знаний, где контент ранжируется не по лайкам, а по реальной эффективности. 
+                    Атомарные заметки. Рабочие алгоритмы. Никакой воды.
+                </p>
+                <div class="flex justify-center gap-4">
+                    <button onclick="showPage('feed')" class="btn-neon px-8 py-3 rounded-lg font-bold text-lg">Войти в Кузницу</button>
+                    <button onclick="showPage('graph')" class="bg-gray-800 hover:bg-gray-700 px-8 py-3 rounded-lg font-bold text-lg transition">Смотреть Граф</button>
+                </div>
+                
+                <!-- Статистика -->
+                <div class="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+                    <div class="glass p-6 rounded-xl">
+                        <div class="text-3xl font-bold text-accent">2,450+</div>
+                        <div class="text-sm text-gray-500">Атомарных заметок</div>
+                    </div>
+                    <div class="glass p-6 rounded-xl">
+                        <div class="text-3xl font-bold text-success">89%</div>
+                        <div class="text-sm text-gray-500">Методов сработали</div>
+                    </div>
+                    <div class="glass p-6 rounded-xl">
+                        <div class="text-3xl font-bold text-purple">124</div>
+                        <div class="text-sm text-gray-500">Эксперта онлайн</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- СТРАНИЦА: ЛЕНТА (РЕФИНЕРИ) -->
+        <section id="feed" class="hidden fade-in">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-3xl font-bold">Поток решений <span class="text-accent">⚡</span></h2>
+                <button class="btn-neon px-4 py-2 rounded-lg text-sm" onclick="openModal('create-note')">+ Создать заметку</button>
+            </div>
+            
+            <div id="notes-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Заметки генерируются JS -->
+            </div>
+        </section>
+
+        <!-- СТРАНИЦА: ГРАФ ЗНАНИЙ -->
+        <section id="graph" class="hidden fade-in">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-3xl font-bold">Карта связей <i class="fa-solid fa-project-diagram text-purple"></i></h2>
+                <input type="text" placeholder="Поиск узла..." class="bg-card border border-gray-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-accent">
+            </div>
+            <div class="glass p-2 rounded-xl">
+                <div id="mynetwork"></div>
+            </div>
+            <p class="text-center text-gray-500 mt-4 text-sm">Крути колесико для зума, тяни узлы для перестройки.</p>
+        </section>
+
+        <!-- СТРАНИЦА: МАРКЕТПЛЕЙС -->
+        <section id="market" class="hidden fade-in">
+            <h2 class="text-3xl font-bold mb-8">Магазин систем <i class="fa-solid fa-shop text-success"></i></h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                
+                <!-- Товар 1 -->
+                <div class="glass rounded-xl overflow-hidden hover:border-accent transition group">
+                    <div class="h-40 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+                        <i class="fa-solid fa-folder-open text-6xl text-gray-600 group-hover:text-accent transition"></i>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg">Obsidian Vault: Marketing Pro</h3>
+                            <span class="text-accent font-mono">1,500 ₽</span>
+                        </div>
+                        <p class="text-gray-400 text-sm mb-4">Полная база шаблонов для запуска рекламных кампаний. 50+ связанных заметок.</p>
+                        <div class="flex items-center justify-between mt-4">
+                            <div class="flex -space-x-2">
+                                <div class="w-8 h-8 rounded-full bg-gray-700 border border-card"></div>
+                                <div class="w-8 h-8 rounded-full bg-gray-600 border border-card"></div>
+                            </div>
+                            <button onclick="buyItem(this, 'Obsidian Vault: Marketing Pro')" class="btn-neon px-4 py-2 rounded text-sm">Купить</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Товар 2 -->
+                <div class="glass rounded-xl overflow-hidden hover:border-accent transition group">
+                    <div class="h-40 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+                        <i class="fa-solid fa-code text-6xl text-gray-600 group-hover:text-accent transition"></i>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg">Python Snippets Collection</h3>
+                            <span class="text-accent font-mono">900 ₽</span>
+                        </div>
+                        <p class="text-gray-400 text-sm mb-4">Библиотека готовых скриптов для автоматизации рутины. Парсинг, боты, API.</p>
+                        <div class="flex items-center justify-between mt-4">
+                            <div class="flex -space-x-2">
+                                <div class="w-8 h-8 rounded-full bg-gray-700 border border-card"></div>
+                            </div>
+                            <button onclick="buyItem(this, 'Python Snippets')" class="btn-neon px-4 py-2 rounded text-sm">Купить</button>
+                        </div>
+                    </div>
+                </div>
+
+                 <!-- Товар 3 -->
+                 <div class="glass rounded-xl overflow-hidden hover:border-accent transition group">
+                    <div class="h-40 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+                        <i class="fa-solid fa-dumbbell text-6xl text-gray-600 group-hover:text-accent transition"></i>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg">Biohacking Protocol v2</h3>
+                            <span class="text-accent font-mono">2,000 ₽</span>
+                        </div>
+                        <p class="text-gray-400 text-sm mb-4">Система трекинга сна, питания и добавок. Notion + Excel шаблоны.</p>
+                        <div class="flex items-center justify-between mt-4">
+                            <div class="flex -space-x-2">
+                                <div class="w-8 h-8 rounded-full bg-gray-700 border border-card"></div>
+                                <div class="w-8 h-8 rounded-full bg-gray-600 border border-card"></div>
+                                <div class="w-8 h-8 rounded-full bg-gray-500 border border-card"></div>
+                            </div>
+                            <button onclick="buyItem(this, 'Biohacking Protocol')" class="btn-neon px-4 py-2 rounded text-sm">Купить</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- СТРАНИЦА: ЛОГ ОШИБОК (АНТИХРУПКОСТЬ) -->
+        <section id="fails" class="hidden fade-in">
+            <div class="text-center mb-10">
+                <h2 class="text-3xl font-bold text-danger">Лог Ошибок <i class="fa-solid fa-triangle-exclamation"></i></h2>
+                <p class="text-gray-400 mt-2">Здесь мы делимся провалами, чтобы ты не наступал на те же грабли. Превращаем "позор" в актив.</p>
+            </div>
+            
+            <div class="space-y-6 max-w-4xl mx-auto">
+                <!-- Ошибка 1 -->
+                <div class="glass p-6 rounded-xl border-l-4 border-danger">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="font-bold text-lg">Попытка запустить SaaS без MVP</h3>
+                            <span class="text-xs text-gray-500 font-mono mt-1 block">Автор: @dev_alex • 2 дня назад</span>
+                        </div>
+                        <span class="bg-red-900/30 text-red-400 px-2 py-1 rounded text-xs">Потеряно: $5,000</span>
+                    </div>
+                    <p class="mt-4 text-gray-300">
+                        Я потратил 6 месяцев на написание идеального кода, прежде чем показал продукт хоть одному человеку. 
+                        <strong>Урок:</strong> Сделай лендинг за вечер, запусти рекламу на 50$. Если никто не кликнул — идея мертва, не пиши код.
+                    </p>
+                    <div class="mt-4 flex gap-2">
+                        <span class="tag border-gray-600 text-gray-400">#стартап</span>
+                        <span class="tag border-gray-600 text-gray-400">#mvp</span>
+                        <span class="tag border-gray-600 text-gray-400">#провал</span>
+                    </div>
+                </div>
+
+                <!-- Ошибка 2 -->
+                <div class="glass p-6 rounded-xl border-l-4 border-danger">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="font-bold text-lg">Инвестирование в крипто-скам</h3>
+                            <span class="text-xs text-gray-500 font-mono mt-1 block">Автор: @crypto_king • 5 дней назад</span>
+                        </div>
+                        <span class="bg-red-900/30 text-red-400 px-2 py-1 rounded text-xs">Потеряно: 200,000 ₽</span>
+                    </div>
+                    <p class="mt-4 text-gray-300">
+                        Повелся на гарантированные 20% в месяц. Проект назывался "MoonSafe". 
+                        <strong>Урок:</strong> Если доходность выше банковской ставки в 10 раз без объяснения механизма — это пирамида. Всегда читай смарт-контракт.
+                    </p>
+                    <div class="mt-4 flex gap-2">
+                        <span class="tag border-gray-600 text-gray-400">#крипта</span>
+                        <span class="tag border-gray-600 text-gray-400">#инвестиции</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- МОДАЛЬНОЕ ОКНО: АВТОРИЗАЦИЯ -->
+    <div id="auth-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center hidden">
+        <div class="glass p-8 rounded-2xl w-full max-w-md relative">
+            <button onclick="closeModal('auth-modal')" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <h2 class="text-2xl font-bold mb-6 text-center">Вход в POKSSI</h2>
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <input type="text" id="username" placeholder="Имя пользователя" class="w-full bg-dark border border-gray-700 rounded-lg px-4 py-3 focus:border-accent focus:outline-none transition" required>
+                <input type="password" placeholder="Пароль" class="w-full bg-dark border border-gray-700 rounded-lg px-4 py-3 focus:border-accent focus:outline-none transition" required>
+                <button type="submit" class="w-full btn-neon py-3 rounded-lg font-bold">Войти</button>
+            </form>
+            <p class="text-center text-sm text-gray-500 mt-4">Нет аккаунта? <a href="#" class="text-accent hover:underline">Регистрация</a></p>
+        </div>
+    </div>
+
+    <!-- СКРИПТЫ ЛОГИКИ -->
+    <script>
+        // --- ДАННЫЕ (Имитация Базы Данных) ---
+        const notes = [
+            {
+                id: 1,
+                title: "Правило 2 минут для прокрастинации",
+                content: "Если дело занимает меньше 2 минут — сделай его сейчас. Не записывай, не планируй. Это очищает оперативную память мозга.",
+                tags: ["продуктивность", "психология"],
+                votes: 142,
+                author: "Pokssi"
+            },
+            {
+                id: 2,
+                title: "CSS Grid vs Flexbox: Когда что юзать",
+                content: "Flexbox — для одномерных раскладок (строка ИЛИ столбец). Grid — для двумерных (строка И столбец одновременно). Не усложняй Grid там, где хватит Flex.",
+                tags: ["код", "frontend", "css"],
+                votes: 89,
+                author: "dev_alex"
+            },
+            {
+                id: 3,
+                title: "Холодный звонок: Скрипт открытия",
+                content: "Никогда не начинай с 'Вам удобно говорить?'. Начни с проблемы клиента: 'Иван, я видел ваш сайт, там ошибка в форме заявки, вы теряете лиды. Могу сказать как исправить?'",
+                tags: ["продажи", "маркетинг"],
+                votes: 210,
+                author: "sales_guru"
+            },
+            {
+                id: 4,
+                title: "Сон: Температура в комнате",
+                content: "Оптимальная температура для выработки мелатонина — 18-20°C. Если в комнате жарко, фаза глубокого сна сокращается на 30%.",
+                tags: ["биохак", "здоровье"],
+                votes: 56,
+                author: "bio_hacker"
+            }
+        ];
+
+        // --- УПРАВЛЕНИЕ СОСТОЯНИЕМ ---
+        let currentUser = localStorage.getItem('pokssi_user') || null;
+
+        function init() {
+            renderNotes();
+            updateAuthUI();
+            initGraph();
+            
+            // Если пользователь не вошел, покажем главную, но кнопку входа подсветим
+            if(!currentUser) {
+                // Можно раскомментировать, если хочешь强制 логин при старте
+                // openModal('auth-modal');
+            }
+        }
+
+        // --- НАВИГАЦИЯ ---
+        function showPage(pageId) {
+            // Скрыть все секции
+            document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+            // Показать нужную
+            document.getElementById(pageId).classList.remove('hidden');
+            // Перерисовать граф если нужно (баг vis.js при скрытом div)
+            if(pageId === 'graph' && window.network) {
+                window.network.fit();
+            }
+        }
+
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        // --- АВТОРИЗАЦИЯ ---
+        function updateAuthUI() {
+            const container = document.getElementById('auth-buttons');
+            if (currentUser) {
+                container.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="text-sm text-gray-300">Привет, <span class="text-accent font-bold">${currentUser}</span></span>
+                        <button onclick="logout()" class="text-xs text-gray-500 hover:text-white">Выйти</button>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <button onclick="openModal('auth-modal')" class="bg-accent text-black px-4 py-2 rounded-lg font-bold hover:bg-white transition">Войти</button>
+                `;
+            }
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            currentUser = username;
+            localStorage.setItem('pokssi_user', username);
+            closeModal('auth-modal');
+            updateAuthUI();
+            // Переход в ленту после входа
+            showPage('feed');
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('pokssi_user');
+            updateAuthUI();
+            showPage('home');
+        }
+
+        // --- РЕНДЕР ЗАМЕТОК ---
+        function renderNotes() {
+            const container = document.getElementById('notes-container');
+            container.innerHTML = '';
+            
+            notes.forEach(note => {
+                const card = document.createElement('div');
+                card.className = 'glass p-6 rounded-xl hover:bg-gray-800/50 transition flex flex-col h-full';
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="text-xs font-mono text-accent">@${note.author}</span>
+                        <div class="flex gap-1">
+                             ${note.tags.map(tag => `<span class="tag border-gray-600 text-gray-400">#${tag}</span>`).join('')}
+                        </div>
+                    </div>
+                    <h3 class="font-bold text-lg mb-2">${note.title}</h3>
+                    <p class="text-gray-400 text-sm flex-grow mb-4">${note.content}</p>
+                    <div class="flex items-center justify-between pt-4 border-t border-gray-800">
+                        <div class="flex gap-4">
+                            <button class="text-gray-500 hover:text-success flex items-center gap-1 text-sm" onclick="vote(this, 1)">
+                                <i class="fa-solid fa-check"></i> <span>Сработало (${note.votes})</span>
+                            </button>
+                            <button class="text-gray-500 hover:text-danger flex items-center gap-1 text-sm">
+                                <i class="fa-solid fa-xmark"></i> Мусор
+                            </button>
+                        </div>
+                        <button class="text-gray-600 hover:text-white"><i class="fa-regular fa-bookmark"></i></button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function vote(btn, amount) {
+            // Имитация голосования
+            const span = btn.querySelector('span');
+            let current = parseInt(span.innerText.match(/\d+/)[0]);
+            span.innerText = `Сработало (${current + 1})`;
+            btn.classList.add('text-success');
+        }
+
+        // --- МАРКЕТПЛЕЙС ЛОГИКА (FunPay Style) ---
+        function buyItem(btn, itemName) {
+            if (!currentUser) {
+                alert("Сначала войдите в аккаунт!");
+                openModal('auth-modal');
+                return;
+            }
+
+            const originalText = btn.innerText;
+            
+            // Шаг 1: Заявка отправлена
+            btn.disabled = true;
+            btn.innerText = "⏳ Ожидание продавца...";
+            btn.classList.remove('btn-neon');
+            btn.classList.add('bg-yellow-600', 'text-white', 'border-transparent');
+
+            // Имитация задержки (продавец принимает)
+            setTimeout(() => {
+                // Шаг 2: Продавец принял
+                btn.innerText = "✅ Доступно!";
+                btn.classList.remove('bg-yellow-600');
+                btn.classList.add('bg-success', 'text-black');
+                
+                // Имитация скачивания
+                setTimeout(() => {
+                    alert(`Успешно! Файл "${itemName}" добавлен в вашу библиотеку.`);
+                    btn.innerText = "Скачано";
+                    btn.classList.add('opacity-50');
+                }, 1000);
+            }, 2000);
+        }
+
+        // --- ГРАФ ЗНАНИЙ (Vis.js) ---
+        function initGraph() {
+            const container = document.getElementById('mynetwork');
+            const data = {
+                nodes: new vis.DataSet([
+                    {id: 1, label: 'Маркетинг', color: '#00f2ff', font: {color: 'white'}},
+                    {id: 2, label: 'SEO', color: '#bd00ff', font: {color: 'white'}},
+                    {id: 3, label: 'Копирайтинг', color: '#bd00ff', font: {color: 'white'}},
+                    {id: 4, label: 'Python', color: '#00ff9d', font: {color: 'black'}},
+                    {id: 5, label: 'Автоматизация', color: '#00ff9d', font: {color: 'black'}},
+                    {id: 6, label: 'Психология', color: '#ff0055', font: {color: 'white'}},
+                    {id: 7, label: 'Продажи', color: '#ff0055', font: {color: 'white'}},
+                    {id: 8, label: 'Obsidian', color: '#ffffff', font: {color: 'black'}},
+                    {id: 9, label: 'Zettelkasten', color: '#ffffff', font: {color: 'black'}},
+                ]),
+                edges: new vis.DataSet([
+                    {from: 1, to: 2},
+                    {from: 1, to: 7},
+                    {from: 2, to: 3},
+                    {from: 3, to: 7},
+                    {from: 4, to: 5},
+                    {from: 5, to: 1}, // Автоматизация маркетинга
+                    {from: 6, to: 7}, // Психология в продажах
+                    {from: 6, to: 3}, // Психология в текстах
+                    {from: 8, to: 9},
+                    {from: 9, to: 1}, // Метод в маркетинге
+                    {from: 4, to: 8}, // Python скрипты для Obsidian
+                ])
+            };
+            const options = {
+                nodes: { shape: 'dot', size: 20, borderWidth: 2 },
+                edges: { width: 2, color: { color: '#333', highlight: '#00f2ff' }, smooth: { type: 'continuous' } },
+                physics: { stabilization: false, barnesHut: { gravitationalConstant: -3000, springLength: 150 } },
+                interaction: { hover: true, tooltipDelay: 200 }
+            };
+            window.network = new vis.Network(container, data, options);
+        }
+
+        // Запуск
+        init();
+    </script>
+</body>
+</html>
